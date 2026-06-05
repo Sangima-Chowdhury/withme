@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="hero">
+        <h1>WithMe</h1>
+        <p>Post a need. Help someone. No middleman.</p>
+        <a href="/post/new" class="btn">Post a Need</a>
+    </div>
+
+    <div class="feed">
+        {% if posts %}
+            {% for post in posts %}
+            <div class="card">
+                <div class="card-category">{{ post.category }}</div>
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.description }}</p>
+
+                {% if post.photo_filename %}
+                <img 
+                    src="{{ url_for('static', filename='uploads/' + post.photo_filename) }}" 
+                    alt="Post photo"
+                >
+                {% endif %}
+
+                {% if post.ai_summary %}
+                <div class="summary">
+                    <strong>AI Summary:</strong> {{ post.ai_summary }}
+                </div>
+                {% endif %}
+
+                <div class="card-date">
+                    {{ post.date_posted.strftime('%d %B %Y') }}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <p>No posts yet. Be the first to post a need.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
