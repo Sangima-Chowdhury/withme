@@ -251,3 +251,13 @@ button[type="submit"] {
     font-family: 'Inter', sans-serif;
     margin: 12px 0 48px;
 }
+
+.flash {
+    background: #FF6B6B22;
+    border: 1px solid #FF6B6B66;
+    color: #FF6B6B;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}

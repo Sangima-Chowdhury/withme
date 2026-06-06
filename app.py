@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
@@ -33,8 +35,25 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB
 
 db = SQLAlchemy(app)
 
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
+
 
 # DATABASE model
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(300), nullable=False)
+    date_joined = db.Column(db.DateTime, default=datetime.utcnow)
+    posts = db.relationship('Post', backref='author', lazy=True)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -44,6 +63,7 @@ class Post(db.Model):
     photo_filename = db.Column(db.String(300), nullable=True)
     ai_summary = db.Column(db.Text, nullable=True)
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
 
     def __repr__(self):
         return f"<Post {self.title}>"
@@ -72,8 +92,8 @@ def generate_ai_summary(title, description, category):
             messages=[
                 {
                     "role": "user",
-                    "content": f"""Someone has posted a need on WithMe, a community help platform. 
-                    
+                    "content": f"""Someone has posted a need on WithMe, a community help platform.
+
 Category: {category}
 Title: {title}
 Their story: {description}
@@ -103,6 +123,7 @@ def home():
 
 
 @app.route("/post/new", methods=["GET", "POST"])
+@login_required
 def new_post():
     if request.method == "POST":
         title = request.form.get("title")
@@ -129,7 +150,8 @@ def new_post():
             description=description,
             category=category,
             photo_filename=photo_filename,
-            ai_summary=ai_summary
+            ai_summary=ai_summary,
+            user_id=current_user.id
         )
 
         db.session.add(post)
@@ -138,6 +160,61 @@ def new_post():
         return redirect(url_for("home"))
 
     return render_template("post.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        # Check if user already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash("Email already registered. Please log in.")
+            return redirect(url_for("login"))
+
+        # Create new user with hashed password
+
+        hashed_password = generate_password_hash(password)
+        user = User(
+            username=username,
+            email=email,
+            password=hashed_password
+        )
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        return redirect(url_for("home"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST])"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user or not check_password_hash(user.password, password):
+            flash("Invalid email or password.")
+            return redirect(url_for("login"))
+
+        login_user(user)
+        return redirect(url_for("home"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("home"))
 
 
 # start the Flask application

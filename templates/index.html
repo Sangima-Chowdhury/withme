@@ -32,10 +32,13 @@
                 {% endif %}
 
                 <div class="card-date">
+                    {% if post.author %}
+                      Posted by {{ post.author.username }} · 
+                    {% endif %}
                     {{ post.date_posted.strftime('%d %B %Y') }}
                 </div>
             </div>
-            {% endfor %}
+           {% endfor %}
         {% else %}
             <div class="empty">
                 <p>No posts yet. Be the first to post a need.</p>

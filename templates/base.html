@@ -8,10 +8,19 @@
             
 <body>
 
-     <nav>
-         <a href="/" class="logo">WithMe</a>
-         <a href="/post/new">Post a Need</a>
-    </nav>
+    <nav>
+    <a href="/" class="logo">WithMe</a>
+    <div style="display:flex; gap:12px; align-items:center;">
+        {% if current_user.is_authenticated %}
+            <span style="color:#666; font-size:13px;">{{ current_user.username }}</span>
+            <a href="/logout" style="background:transparent; border:1px solid #333; color:#666; padding:8px 18px; border-radius:100px; font-size:13px; text-decoration:none;">Log out</a>
+            <a href="/post/new" class="btn" style="padding:8px 18px; font-size:13px;">Post a Need</a>
+        {% else %}
+            <a href="/login" class="btn" style="padding:8px 18px; font-size:13px;"">Log in</a>
+            <a href="/register" class="btn" style="padding:8px 18px; font-size:13px;">Sign up</a>
+        {% endif %}
+    </div>
+</nav>
 
     <main>
         {% block content %}

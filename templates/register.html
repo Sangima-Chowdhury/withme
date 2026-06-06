@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <h1>Join WithMe</h1>
+    <p>Create an account to post a need or help others.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form action="/register" method="POST">
+
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input 
+                type="text" 
+                id="username" 
+                name="username"
+                placeholder="e.g. sangima"
+                required
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input 
+                type="email" 
+                id="email" 
+                name="email"
+                placeholder="your@email.com"
+                required
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input 
+                type="password" 
+                id="password" 
+                name="password"
+                placeholder="Choose a strong password"
+                required
+            >
+        </div>
+
+        <button type="submit">Create Account</button>
+
+    </form>
+
+    <p style="text-align:center; margin-top: 20px; color: #666;">
+        Already have an account? 
+        <a href="/login" style="color: #FF6B6B;">Log in</a>
+    </p>
+</div>
+
+{% endblock %}
