@@ -217,6 +217,12 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/setup-db")
+def setup_db():
+    db.create_all()
+    return "DATABASE tables created!"
+
+
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
