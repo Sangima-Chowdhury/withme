@@ -5,8 +5,17 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import anthropic
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -100,15 +109,18 @@ def new_post():
         description = request.form.get("description")
         category = request.form.get("category")
 
-        # Handle photo upload
+        # Handle photo upload to Cloudinary and get the secure URL to save in the DATABASE, with error handling to ensure the app doesn't crash if the upload fails, and instead just saves the post without a photo
 
         photo_filename = None
         photo = request.files.get("photo")
 
-        if photo and allowed_file(photo.filename):
-            filename = secure_filename(photo.filename)
-            photo.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-            photo_filename = filename
+        if photo and photo.filename != "" and allowed_file(photo.filename):
+            try:
+                result = cloudinary.uploader.upload(photo)
+                photo_filename = result["secure_url"]
+            except Exception as e:
+                print(f"Cloudinary upload error: {e}")
+                photo_filename = None
 
         # SAVE post to DATABASE with AI summary
         ai_summary = generate_ai_summary(title, description, category)
