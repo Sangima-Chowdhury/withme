@@ -63,6 +63,7 @@ class Post(db.Model):
     ai_summary = db.Column(db.Text, nullable=True)
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    is_urgent = db.Column(db.Boolean, default=False, nullable=False)
 
     def __repr__(self):
         return f"<Post {self.title}>"
@@ -117,7 +118,10 @@ Maximum 30 words."""
 
 @app.route("/")
 def home():
-    posts = Post.query.order_by(Post.date_posted.desc()).all()
+    posts = Post.query.order_by(
+        Post.is_urgent.desc(),
+        Post.date_posted.desc()).all()
+
     return render_template("index.html", posts=posts)
 
 
@@ -128,6 +132,7 @@ def new_post():
         title = request.form.get("title")
         description = request.form.get("description")
         category = request.form.get("category")
+        is_urgent = request.form.get("is_urgent") == "true"
 
         # Handle photo upload to Cloudinary and get the secure URL to save in the DATABASE, with error handling to ensure the app doesn't crash if the upload fails, and instead just saves the post without a photo
 
@@ -150,7 +155,8 @@ def new_post():
             category=category,
             photo_filename=photo_filename,
             ai_summary=ai_summary,
-            user_id=current_user.id
+            user_id=current_user.id,
+            is_urgent=is_urgent
         )
 
         db.session.add(post)
@@ -191,7 +197,7 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login", methods=["GET", "POST])"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         email = request.form.get("email")
