@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -215,6 +214,15 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+
+
+@app.route('/setup-db')
+def setup_db():
+    with db.engine.connect() as conn:
+        conn.execute(db.text(
+            'ALTER TABLE post ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES "user"(id)'))
+        conn.commit()
+    return 'Column added!'
 
 
 # start the Flask application
