@@ -222,6 +222,16 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/setup-db")
+def setup_db():
+    with db.engine.connect() as conn:
+        conn.execute("db.text(
+            "ALTER TABLE post ADD COLUMN IF NOT EXISTS is_urgent BOOLEAN DEFAULT FALSE"
+        ))
+        conn.commit()
+        return "is_urgent column added!"
+
+
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
