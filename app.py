@@ -64,6 +64,7 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     is_urgent = db.Column(db.Boolean, default=False, nullable=False)
+    location = db.Column(db.String(100), nullable=True)
 
     def __repr__(self):
         return f"<Post {self.title}>"
@@ -133,6 +134,7 @@ def new_post():
         description = request.form.get("description")
         category = request.form.get("category")
         is_urgent = request.form.get("is_urgent") == "true"
+        location = request.form.get("location")
 
         # Handle photo upload to Cloudinary and get the secure URL to save in the DATABASE, with error handling to ensure the app doesn't crash if the upload fails, and instead just saves the post without a photo
 
@@ -156,7 +158,8 @@ def new_post():
             photo_filename=photo_filename,
             ai_summary=ai_summary,
             user_id=current_user.id,
-            is_urgent=is_urgent
+            is_urgent=is_urgent,
+            location=location
         )
 
         db.session.add(post)
