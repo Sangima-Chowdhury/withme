@@ -225,6 +225,15 @@ def logout():
     return redirect(url_for("home"))
 
 
+@app.route("/setup-db")
+def setup_db():
+    with db.engine.connect() as conn:
+        conn.execute(
+            db.text('ALTER TABLE post ADD COLUMN IF NOT EXISTS location VARCHAR(100)'))
+        conn.commit()
+    return "location column added!"
+
+
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
