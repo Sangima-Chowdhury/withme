@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 import anthropic
 import cloudinary
 import cloudinary.uploader
+from better_profanity import profanity
+
 
 load_dotenv()
 
@@ -81,6 +83,24 @@ class Comment(db.Model):
     replies = db.relationship("Comment", backref=db.backref(
         "parent", remote_side=[id]), lazy="dynamic")
     author = db.relationship("User", backref="comments")
+
+
+class Conversation(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    messages = db.relationship("Message", backref="conversation", lazy=True)
+
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey(
+        "conversation.id"), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    sender = db.relationship("User", foreign_keys=[sender_id])
 
 
 # Create the DATABASE tables
@@ -271,6 +291,79 @@ def add_reply(post_id, comment_id):
         db.session.add(reply)
         db.session.commit()
     return redirect(url_for("post_detail", post_id=post_id))
+
+
+@app.route("/message/<int:user_id>")
+@login_required
+def start_conversation(user_id):
+    if user_id == current_user.id:
+        return redirect(url_for("home"))
+
+    # Check if conversation already exists
+    conversation = Conversation.query.filter(
+        ((Conversation.user1_id == current_user.id) & (Conversation.user2_id == user_id)) |
+        ((Conversation.user1_id == user_id) &
+         (Conversation.user2_id == current_user.id))
+    ).first()
+
+    # If not, create a new conversation
+    if not conversation:
+        conversation = Conversation(user1_id=current_user.id, user2_id=user_id)
+        db.session.add(conversation)
+        db.session.commit()
+
+    return redirect(url_for("conversation_detail", conversation_id=conversation.id))
+
+
+@app.route("/conversation/<int:conversation_id>", methods=["GET", "POST"])
+@login_required
+def conversation_detail(conversation_id):
+    conversation = Conversation.query.get_or_404(conversation_id)
+
+    # Security - only the two people in the conversation can see it
+    if current_user.id not in [conversation.user1_id, conversation.user2_id]:
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        body = request.form.get("body")
+        if body:
+            if profanity.contains_profanity(body):
+                flash(
+                    "⚠️ Your message contains inappropriate language and was not sent.")
+            else:
+                message = Message(
+                    conversation_id=conversation_id,
+                    sender_id=current_user.id,
+                    body=body
+                )
+                db.session.add(message)
+                db.session.commit()
+
+    messages = Message.query.filter_by(
+        conversation_id=conversation_id).order_by(Message.timestamp.asc()).all()
+    other_id = conversation.user2_id if conversation.user1_id == current_user.id else conversation.user1_id
+    other_user = User.query.get(other_id)
+    return render_template("conversation.html", conversation=conversation,
+                           messages=messages, other_user=other_user)
+
+
+@app.route("/inbox")
+@login_required
+def inbox():
+    conversations = Conversation.query.filter(
+        (Conversation.user1_id == current_user.id) |
+        (Conversation.user2_id == current_user.id)
+    ).order_by(Conversation.created_at.desc()).all()
+
+    # Get the other user for each convo and the latest message
+
+    conv_data = []
+    for convo in conversations:
+        other_id = convo.user2_id if convo.user1_id == current_user.id else convo.user1_id
+        other = User.query.get(other_id)
+        conv_data.append({"convo": convo, "other": other})
+
+    return render_template("inbox.html", conv_data=conv_data)
 
 
 # start the Flask application

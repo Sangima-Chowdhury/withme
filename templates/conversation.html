@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container" style="max-width:680px;">
+
+    <!-- HEADER -->
+    <div style="display:flex; align-items:center; gap:14px; margin:32px 0 24px; border-bottom:1px solid #1f1f1f; padding-bottom:20px;">
+        <a href="{{ url_for('inbox') }}" style="color:#666; font-size:20px; text-decoration:none;">←</a>
+        <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, #FF6B6B, #FF8E53); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:white;">
+            {{ other_user.username[0].upper() }}
+        </div>
+        <div style="font-weight:700; font-size:16px;">{{ other_user.username }}</div>
+    </div>
+
+    <!-- WARNING BANNER -->
+    <div style="background:#FF6B6B11; border:1px solid #FF6B6B33; border-radius:10px; padding:12px 16px; margin-bottom:24px; font-size:13px; color:#FF6B6B;">
+        ⚠️ Never share bank details, passwords, or personal information with someone you don't fully trust. WithMe is not responsible for exchanges made outside this platform.
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- MESSAGES THREAD -->
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px; min-height:300px;">
+        {% if messages %}
+            {% for msg in messages %}
+                {% if msg.sender_id == current_user.id %}
+                <!-- MY MESSAGE - right side -->
+                <div style="display:flex; justify-content:flex-end;">
+                    <div style="background:linear-gradient(135deg, #FF6B6B, #FF8E53); color:white; padding:10px 16px; border-radius:18px 18px 4px 18px; max-width:70%; font-size:14px; line-height:1.5;">
+                        {{ msg.body }}
+                        <div style="font-size:11px; opacity:0.7; margin-top:4px; text-align:right;">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- THEIR MESSAGE - left side -->
+                <div style="display:flex; justify-content:flex-start;">
+                    <div style="background:#1f1f1f; color:#fff; padding:10px 16px; border-radius:18px 18px 18px 4px; max-width:70%; font-size:14px; line-height:1.5;">
+                        {{ msg.body }}
+                        <div style="font-size:11px; color:#666; margin-top:4px;">{{ msg.timestamp.strftime('%H:%M') }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            <div style="text-align:center; color:#444; padding:40px 0; font-size:14px;">
+                No messages yet. Say hello! 👋
+            </div>
+        {% endif %}
+    </div>
+
+ <!-- MESSAGE INPUT -->
+    <div style="position:sticky; bottom:0; background:#0a0a0a; padding:16px 0 24px;">
+        <form action="{{ url_for('conversation_detail', conversation_id=conversation.id) }}" method="POST" style="display:flex; gap:10px; align-items:flex-end;">
+            <textarea name="body" rows="3" placeholder="Write a message..." required style="flex:1; background:#111; border:1px solid #333; border-radius:12px; padding:12px 16px; font-size:14px; color:#fff; font-family:'Inter', sans-serif; resize:none;"></textarea>
+            <button type="submit" style="width:auto !important; align-self:flex-end; margin-bottom:14px; background:linear-gradient(135deg, #FF6B6B, #FF8E53); color:white; border:none; padding:14px 20px; border-radius:100px; font-size:14px; font-weight:700; cursor:pointer; font-family:'Inter', sans-serif; white-space:nowrap; flex-shrink:0;">Send ✉️</button>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}   
+

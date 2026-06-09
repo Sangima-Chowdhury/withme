@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <h1 style="margin-top:40px;">Messages</h1>
+    <p>Your conversations</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:24px;">
+        {% if conv_data %}
+            {% for item in conv_data %}
+                {% set convo = item.convo %}
+                {% set other = item.other %}
+
+                <a href="{{ url_for('conversation_detail', conversation_id=convo.id) }}" style="text-decoration:none;">
+                    <div class="card" style="display:flex; align-items:center; gap:16px; padding:16px 20px; cursor:pointer;">
+                        
+                        <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #FF6B6B, #FF8E53); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; color:white; flex-shrink:0;">
+                            {{ other.username[0].upper() }}
+                        </div>
+
+                        <div>
+                            <div style="font-weight:600; font-size:15px; color:#fff;">{{ other.username }}</div>
+                            <div style="font-size:13px; color:#666; margin-top:2px;">{{ convo.created_at.strftime('%d %b %Y') }}</div>
+                        </div>
+
+                        <div style="margin-left:auto; color:#FF6B6B; font-size:20px;">→</div>
+
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <p>No messages yet. Start a conversation from a post!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
