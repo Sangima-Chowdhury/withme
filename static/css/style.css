@@ -261,3 +261,9 @@ button[type="submit"] {
     margin-bottom: 20px;
     font-size: 14px;
 }
+
+textarea:focus {
+    outline: none;
+    border-color: #FF6B6B !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+}

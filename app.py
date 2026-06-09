@@ -70,8 +70,20 @@ class Post(db.Model):
         return f"<Post {self.title}>"
 
 
-# Create the DATABASE tables
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey(
+        "comment.id"), nullable=True)
+    replies = db.relationship("Comment", backref=db.backref(
+        "parent", remote_side=[id]), lazy="dynamic")
+    author = db.relationship("User", backref="comments")
 
+
+# Create the DATABASE tables
 with app.app_context():
     db.create_all()
 
@@ -225,13 +237,40 @@ def logout():
     return redirect(url_for("home"))
 
 
-@app.route("/setup-db")
-def setup_db():
-    with db.engine.connect() as conn:
-        conn.execute(
-            db.text('ALTER TABLE post ADD COLUMN IF NOT EXISTS location VARCHAR(100)'))
-        conn.commit()
-    return "location column added!"
+@app.route("/post/<int:post_id>")
+def post_detail(post_id):
+    post = Post.query.get_or_404(post_id)
+    comments = Comment.query.filter(
+        Comment.post_id == post_id, Comment.parent_id == None
+    ).order_by(Comment.timestamp.asc()).all()
+    return render_template("post_detail.html", post=post, comments=comments)
+
+
+@app.route("/post/<int:post_id>/comment", methods=["POST"])
+@login_required
+def add_comment(post_id):
+    post = Post.query.get_or_404(post_id)
+    body = request.form.get("body")
+
+    if body:
+        comment = Comment(body=body, user_id=current_user.id,
+                          post_id=post_id, parent_id=None)
+        db.session.add(comment)
+        db.session.commit()
+    return redirect(url_for("post_detail", post_id=post_id))
+
+
+@app.route("/post/<int:post_id>/comment/<int:comment_id>/reply", methods=["POST"])
+@login_required
+def add_reply(post_id, comment_id):
+    post = Post.query.get_or_404(post_id)
+    body = request.form.get("body")
+    if body:
+        reply = Comment(body=body, user_id=current_user.id,
+                        post_id=post_id, parent_id=comment_id)
+        db.session.add(reply)
+        db.session.commit()
+    return redirect(url_for("post_detail", post_id=post_id))
 
 
 # start the Flask application
