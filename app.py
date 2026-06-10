@@ -432,7 +432,7 @@ def setup_db_verify():
         db.session.execute(text(
             "ALTER TABLE \"user\" ADD COLUMN is_verified BOOLEAN DEFAULT FALSE NOT NULL"))
         db.session.execute(
-            text("ALTER TABLE \"user\" ADD COLUMN verification_token VARCHAR(200"))
+            text("ALTER TABLE \"user\" ADD COLUMN verification_token VARCHAR(200)"))
         db.session.commit()
         return "✅ Columns added successfully!"
 
