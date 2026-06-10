@@ -443,6 +443,16 @@ def inbox():
     return render_template("inbox.html", conv_data=conv_data)
 
 
+@app.route("/reset-db-danger")
+def reset_db_danger():
+    try:
+        db.drop_all()
+        db.create_all()
+        return "✅ Database wiped and rebuilt clean!"
+    except Exception as e:
+        return f"Error: {e}"
+
+
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
