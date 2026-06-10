@@ -238,6 +238,24 @@ def register():
         username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
+
+        # Check password match
+        if password != confirm_password:
+            flash("Passwords do not match. Please try again.")
+            return redirect(url_for("register"))
+
+        # Check password strength
+        import re
+        if len(password) < 8:
+            flash("Password must be at least 8 characters long.")
+            return redirect(url_for("register"))
+        if not re.search(r"[0-9]", password):
+            flash("Password must contain at least one number.")
+            return redirect(url_for("register"))
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+            flash("Password must contain at least one symbol (e.g. ! @ # $).")
+            return redirect(url_for("register"))
 
         # Check if user already exists
         existing_user = User.query.filter_by(email=email).first()
