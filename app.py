@@ -9,9 +9,13 @@ import anthropic
 import cloudinary
 import cloudinary.uploader
 from better_profanity import profanity
+import resend
+import secrets
 
 
 load_dotenv()
+
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
@@ -48,6 +52,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(300), nullable=False)
     date_joined = db.Column(db.DateTime, default=datetime.utcnow)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    verification_token = db.Column(db.String(200), nullable=True)
     posts = db.relationship('Post', backref='author', lazy=True)
 
 
@@ -146,6 +152,30 @@ Maximum 30 words."""
         print(f"AI summary error: {e}")
         return None
 
+    # Helper function for email verification
+
+
+def send_verification_email(user):
+    verify_url = url_for(
+        "verify_email", token=user.verification_token, _external=True)
+    try:
+        resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": user.email,
+            "subject": "Verify your WithMe account",
+            "html": f"""
+                <div style="font-family:sans-serif; max-width:480px; margin:0 auto;">
+                    <h2 style="color: #FF6B6B;">Welcome to WithMe! 🧡</h2>
+                    <p>Thanks for signing up. Please verify your email to activate your account.</p>
+                    <a href="{verify_url}" style="display:inline-block; background:#FF6B6B; color:white; padding:12px 24px; border-radius:100px; text-decoration:none; font-weight:bold; margin:16px 0;">Verify My Account</a>
+                    <p style="color:#888; font-size:13px;">If you didn't sign up for WithMe, you can ignore this email.</p>
+                </div>
+            """
+        })
+
+    except Exception as e:
+        print(f"Email send error: {e}")
+
 
 # Routes
 
@@ -215,21 +245,44 @@ def register():
             flash("Email already registered. Please log in.")
             return redirect(url_for("login"))
 
-        # Create new user with hashed password
+        # Create new user with hashed password and verification token
 
         hashed_password = generate_password_hash(password)
+        token = secrets.token_urlsafe(32)
         user = User(
             username=username,
             email=email,
-            password=hashed_password
+            password=hashed_password,
+            verification_token=token
         )
         db.session.add(user)
         db.session.commit()
 
-        login_user(user)
-        return redirect(url_for("home"))
+# Send verification email
+        send_verification_email(user)
+
+        flash("Account created! Please check your email to verify your account before logging in.")
+
+        return redirect(url_for("login"))
 
     return render_template("register.html")
+
+
+@app.route("/verify/<token>")
+def verify_email(token):
+    user = User.query.filter_by(verification_token=token).first()
+
+    if not user:
+        flash("Oops! That link has expired or already been used.")
+        return redirect(url_for("login"))
+
+    # Mark as verified and clear the token
+    user.is_verified = True
+    user.verification_token = None
+    db.session.commit()
+
+    flash("✅ Your account has been verified! You can now log in.")
+    return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -242,6 +295,12 @@ def login():
 
         if not user or not check_password_hash(user.password, password):
             flash("Invalid email or password.")
+            return redirect(url_for("login"))
+
+        # Block Un-verified users(they must verify email & then login)
+
+        if not user.is_verified:
+            flash("Please verify your email before logging in. Check your inbox!")
             return redirect(url_for("login"))
 
         login_user(user)
@@ -364,6 +423,21 @@ def inbox():
         conv_data.append({"convo": convo, "other": other})
 
     return render_template("inbox.html", conv_data=conv_data)
+
+
+@app.route("/setup-db-verify")
+def setup_db_verify():
+    try:
+        from sqlalchemy import text
+        db.session.execute(text(
+            "ALTER TABLE \"user\" ADD COLUMN is_verified BOOLEAN DEFAULT FALSE NOT NULL"))
+        db.session.execute(
+            text("ALTER TABLE \"user\" ADD COLUMN verification_token VARCHAR(200"))
+        db.session.commit()
+        return "✅ Columns added successfully!"
+
+    except Exception as e:
+        return f"Error: {e}"
 
 
 # start the Flask application
