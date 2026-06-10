@@ -425,21 +425,6 @@ def inbox():
     return render_template("inbox.html", conv_data=conv_data)
 
 
-@app.route("/setup-db-verify")
-def setup_db_verify():
-    try:
-        from sqlalchemy import text
-        db.session.execute(text(
-            "ALTER TABLE \"user\" ADD COLUMN is_verified BOOLEAN DEFAULT FALSE NOT NULL"))
-        db.session.execute(
-            text("ALTER TABLE \"user\" ADD COLUMN verification_token VARCHAR(200)"))
-        db.session.commit()
-        return "✅ Columns added successfully!"
-
-    except Exception as e:
-        return f"Error: {e}"
-
-
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
