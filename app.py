@@ -443,6 +443,17 @@ def inbox():
     return render_template("inbox.html", conv_data=conv_data)
 
 
+@app.route("/verify-manually/<email>")
+def verify_manually(email):
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.is_verified = True
+        user.verification_token = None
+        db.session.commit()
+        return f"✅ {email} is now verified!"
+    return "User not found."
+
+
 # start the Flask application
 if __name__ == "__main__":
     app.run(debug=True)
