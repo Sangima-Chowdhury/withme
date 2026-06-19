@@ -2,3 +2,4 @@
 venv/
 static/uploads/
 __pycache__/
+echo "chroma_db/" >> .gitignore

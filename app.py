@@ -11,9 +11,14 @@ import cloudinary.uploader
 from better_profanity import profanity
 import resend
 import secrets
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_anthropic import ChatAnthropic
 
 
 load_dotenv()
+
+app = Flask(__name__)
 
 resend.api_key = os.getenv("RESEND_API_KEY")
 
@@ -25,8 +30,11 @@ cloudinary.config(
 
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
-app = Flask(__name__)
+# RAG chatbot setup-this goes at the top and not inside the route because it will reload every single time someone asks a question which is slow and wasteful. Putting it here means it will load once when the app starts in about 2 seconds.
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+chat_db = Chroma(persist_directory="./chroma_db",
+                 embedding_function=embeddings)
+chat_model = ChatAnthropic(model="claude-sonnet-4-6")
 
 
 # DATABASE configuration
@@ -441,6 +449,35 @@ def inbox():
         conv_data.append({"convo": convo, "other": other})
 
     return render_template("inbox.html", conv_data=conv_data)
+
+
+@app.route("/ask", methods=["POST"])
+def ask_chatbot():
+    question = request.form.get("question")
+
+    if not question:
+        return {"answer": "Please ask a question!"}
+
+    # Find relevant chunks
+    relevant_chunks = chat_db.similarity_search(question, k=3)
+    context = "\n\n".join([chunk.page_content for chunk in relevant_chunks])
+
+    prompt = f"""You are a helpful assistant for WithMe, a community needs platform.
+    Use the following information to answer the user's question.
+    Only answer based on the information provided.
+    Keep your answer concise and friendly.
+    Do not use markdown formatting like asterisks, hashtags or bulletpoints - write in plain conversational sentences only.
+    You can use warm, friendly, apropriate emojis to match WithMe's tone, but don't overdo it.
+    
+    Information:
+    {context}
+    
+    User question: {question}
+    """
+
+    response = chat_model.invoke(prompt)
+
+    return {"answer": response.content}
 
 
 # start the Flask application
