@@ -12,7 +12,7 @@ from better_profanity import profanity
 import resend
 import secrets
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_anthropic import ChatAnthropic
 
 
@@ -31,7 +31,7 @@ cloudinary.config(
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 # RAG chatbot setup-this goes at the top and not inside the route because it will reload every single time someone asks a question which is slow and wasteful. Putting it here means it will load once when the app starts in about 2 seconds.
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # Build ChromaDB automatically if it doesn't exist yet
 if not os.path.exists("/chroma_db"):
