@@ -34,7 +34,7 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # Build ChromaDB automatically if it doesn't exist yet
-if not os.path.exists("/chroma_db"):
+if not os.path.exists("./chroma_db"):
     from langchain_community.document_loaders import TextLoader
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -47,7 +47,7 @@ if not os.path.exists("/chroma_db"):
 else:
     chat_db = Chroma(persist_directory="./chroma_db",
                      embedding_function=embeddings)
-    chat_model = ChatAnthropic(model="claude-sonnet-4-6")
+chat_model = ChatAnthropic(model="claude-sonnet-4-6")
 
 
 # DATABASE configuration
