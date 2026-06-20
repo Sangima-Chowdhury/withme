@@ -44,6 +44,11 @@ This project is also where I taught myself full-stack development — every feat
 - Password confirmation and strength validation (minimum length, number, and symbol required)
 - Session management and protected routes via Flask-Login
 
+### 🤖 AI Helper Chatbot
+- A RAG-powered support chatbot that answers questions about WithMe using the project's own documentation
+- Built with LangChain and ChromaDB for vector search, OpenAI embeddings, and the Claude API for responses
+- Runs in local development (the embedding pipeline needs more memory than free-tier hosting provides)
+
 ---
 
 ## 🛠️ Tech Stack
@@ -60,6 +65,7 @@ This project is also where I taught myself full-stack development — every feat
 | AI summaries | Anthropic Claude API |
 | Content safety | better-profanity |
 | Hosting | Render |
+| AI chatbot | LangChain, ChromaDB, OpenAI embeddings (RAG) |
 
 ---
 
@@ -121,6 +127,7 @@ Planned future improvements:
 - Custom domain to enable email delivery to all users in production
 - User profiles and reputation
 - Search and filtering by category and location
+- Deploy the AI helper chatbot to production (requires a hosting tier with more memory)
 
 ---
 
@@ -145,6 +152,11 @@ Planned future improvements:
 <img width="1352" height="878" alt="Screenshot 2026-06-10 at 23 17 49" src="https://github.com/user-attachments/assets/f152e463-ad43-425d-a5b6-7026d6760a46" />
 
 <img width="1352" height="878" alt="Screenshot 2026-06-10 at 23 18 15" src="https://github.com/user-attachments/assets/d2491fe1-2ecd-4ab1-a799-9483ca16c262" />
+
+<img width="1352" height="878" alt="Screenshot 2026-06-20 at 09 55 39" src="https://github.com/user-attachments/assets/ffbf6d1b-99c9-4a16-9c35-105bd57b1692" />
+
+<img width="1352" height="878" alt="Screenshot 2026-06-20 at 09 57 29" src="https://github.com/user-attachments/assets/34d7fb7e-91dc-49dc-b6e0-b2924a01c5ec" />
+
 
 ---
 
