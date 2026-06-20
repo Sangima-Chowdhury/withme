@@ -30,24 +30,32 @@ cloudinary.config(
 
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+
+# Only load the RAG chatbot locally - it needs more memory than free hosting provides
+RUNNING_ON_RENDER = os.getenv("RENDER") is not None
+
+
 # RAG chatbot setup-this goes at the top and not inside the route because it will reload every single time someone asks a question which is slow and wasteful. Putting it here means it will load once when the app starts in about 2 seconds.
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+if not RUNNING_ON_RENDER:
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    chat_model = ChatAnthropic(model="claude-sonnet-4-6")
 
 # Build ChromaDB automatically if it doesn't exist yet
-if not os.path.exists("./chroma_db"):
-    from langchain_community.document_loaders import TextLoader
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    if not os.path.exists("./chroma_db"):
+        from langchain_community.document_loaders import TextLoader
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    loader = TextLoader("README.md")
-    documents = loader.load()
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunks = splitter.split_documents(documents)
-    chat_db = Chroma.from_documents(
-        chunks, embeddings, persist_directory="./chroma_db")
-else:
-    chat_db = Chroma(persist_directory="./chroma_db",
-                     embedding_function=embeddings)
-chat_model = ChatAnthropic(model="claude-sonnet-4-6")
+        loader = TextLoader("README.md")
+        documents = loader.load()
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500, chunk_overlap=50)
+        chunks = splitter.split_documents(documents)
+        chat_db = Chroma.from_documents(
+            chunks, embeddings, persist_directory="./chroma_db")
+    else:
+        chat_db = Chroma(persist_directory="./chroma_db",
+                         embedding_function=embeddings)
 
 
 # DATABASE configuration
@@ -466,6 +474,9 @@ def inbox():
 
 @app.route("/ask", methods=["POST"])
 def ask_chatbot():
+    if RUNNING_ON_RENDER:
+        return {"answer": "The chat helper is currently availaible in local development only - check back soon!"}
+
     question = request.form.get("question")
 
     if not question:
