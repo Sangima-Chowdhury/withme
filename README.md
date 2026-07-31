@@ -4,9 +4,8 @@
 
 WithMe is a community needs platform that connects people who need help directly with people who want to give it — no fees, no intermediaries, no barriers. Whether someone needs food, medicine, shelter, or educational support, they can post their need and a member of the community can step in to help directly.
 
-🔗 **Live app:** [withme-034l.onrender.com](https://withme-034l.onrender.com)
+🔗 **Live app:** [withme.skcbuilds.uk](https://withme.skcbuilds.uk)
 
-> ⏳ *Note: the app is hosted on Render's free tier, so the first visit after a period of inactivity may take 30–50 seconds to wake up. Subsequent loads are fast.*
 
 ---
 
